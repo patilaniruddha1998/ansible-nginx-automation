@@ -1,4 +1,4 @@
-# Ensure the NGINX upgrade directory exists. This directory will be used to store upgrade-related files.
+# #Ensure the NGINX upgrade directory exists. This directory will be used to store upgrade-related files.
 - name: Ensure NGINX upgrade directory exists
   ansible.builtin.file:
     path: "{{ nginx_upgrade_dir }}"
