@@ -6,8 +6,8 @@
     mode: '0755'
   #comment: "Creates the NGINX upgrade directory if it doesn't exist."
   register: create_upgrade_dir
-  debug:
-    msg: "Create upgrade directory: {{ create_upgrade_dir }}"
+  # debug:
+    # msg: "Create upgrade directory: {{ create_upgrade_dir }}"
   tags:
     - nginx_install
     - setup
@@ -19,8 +19,8 @@
     cmd: pwd # Optional: Verify current directory
   register: chdir_result
   #comment: "Changes the working directory to the NGINX upgrade directory."
-  debug:
-    msg: "Change directory: {{ chdir_result }}"
+  # debug:
+    # msg: "Change directory: {{ chdir_result }}"
   tags:
     - nginx_install
     - setup
@@ -50,8 +50,8 @@
     mode: '0755'
   #comment: "Ensures the extraction directory for NGINX exists."
   register: create_extract_dir
-  debug:
-    msg: "Create extract directory: {{ create_extract_dir }}"
+  # debug:
+    # msg: "Create extract directory: {{ create_extract_dir }}"
   tags:
     - nginx_install
     - setup
@@ -65,8 +65,8 @@
     creates: "{{ nginx_extracted_dir }}/# A file expected after extraction"
   #comment: "Extracts the downloaded NGINX zip file."
   register: unarchive_package
-  debug:
-    msg: "Extract package: {{ unarchive_package }}"
+  # debug:
+    # msg: "Extract package: {{ unarchive_package }}"
   tags:
     - nginx_install
     - extract
@@ -81,8 +81,8 @@
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
   #comment: "Installs the new NGINX packages using yum localinstall."
-  debug:
-    msg: "Install new packages: {{ yum_localinstall_output }}"
+  # debug:
+    # msg: "Install new packages: {{ yum_localinstall_output }}"
   tags:
     - nginx_install
     - install
@@ -96,8 +96,8 @@
   changed_when: false  # Mark the task as not changing the system, as it only retrieves information
   ignore_errors: true  # Ignore errors if the package is not installed
   #comment: "Gets the version and release of the base NGINX Plus package for dynamic RPM verification."
-  debug:
-    msg: "Base NGINX Plus version info: {{ base_nginx_version_info }}"  # Print the retrieved version information for debugging
+  # debug:
+    # msg: "Base NGINX Plus version info: {{ base_nginx_version_info }}"  # Print the retrieved version information for debugging
   tags:
     - nginx_install
     - install
@@ -111,8 +111,8 @@
                                     map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default('')) + '.amzn2.ngx.x86_64') | list }}"
   when: base_nginx_version_info.rc == 0  # Only proceed if the base version information was successfully retrieved
   #comment: "Dynamically creates the list of expected NGINX Plus RPMs based on the installed base version."
-  debug:
-    msg: "Dynamically expected NGINX Plus RPMs: {{ nginx_expected_rpms_dynamic }}"
+  # debug:
+    # msg: "Dynamically expected NGINX Plus RPMs: {{ nginx_expected_rpms_dynamic }}"
   tags:
     - nginx_install
     - install
@@ -126,8 +126,8 @@
   changed_when: false  # This task does not modify the system
   when: nginx_expected_rpms_dynamic is defined  # Only run if the expected RPM list is defined
   #comment: "Verifies that the dynamically generated list of expected NGINX Plus RPM packages are installed."
-  debug:
-    msg: "Installed NGINX Plus RPM packages (Dynamic): {{ installed_nginx_rpms_dynamic.stdout_lines }}"
+  # debug:
+    # msg: "Installed NGINX Plus RPM packages (Dynamic): {{ installed_nginx_rpms_dynamic.stdout_lines }}"
   tags:
     - nginx_install
     - install
@@ -139,8 +139,8 @@
     all_modules_installed: "{{ nginx_expected_rpms_dynamic | difference(installed_nginx_rpms_dynamic.stdout_lines) | length == 0 }}"
   when: installed_nginx_rpms_dynamic is defined  # Only run if the installed RPM list is defined
   #comment: "Checks if all expected NGINX Plus modules are installed."
-  debug:
-    msg: "All modules installed: {{ all_modules_installed }}"
+  # debug:
+    # msg: "All modules installed: {{ all_modules_installed }}"
   tags:
     - nginx_install
     - install
@@ -152,8 +152,8 @@
   register: nginx_config_test
   failed_when: nginx_config_test.rc != 0
   #comment: "Validates the NGINX configuration."
-  debug:
-    msg: "Validate config: {{ nginx_config_test }}"
+  # debug:
+    # msg: "Validate config: {{ nginx_config_test }}"
   notify:
     - Start-Nginx # Notify the handler to start NGINX if the configuration is valid.
   tags:
@@ -168,8 +168,8 @@
   changed_when: false
   failed_when: nginx_version_output.rc != 0
   #comment: "Retrieves the installed NGINX version."
-  debug:
-    msg: "NGINX version is {{ nginx_version_output.stderr }}"
+  # debug:
+    # msg: "NGINX version is {{ nginx_version_output.stderr }}"
   tags:
     - nginx_install
     - version
@@ -181,8 +181,8 @@
   register: is_enabled
   changed_when: false
   #comment: "Checks if the NGINX service is enabled to start at boot."
-  debug:
-    msg: "NGINX boot status: {{ is_enabled.stdout }}"
+  # debug:
+    # msg: "NGINX boot status: {{ is_enabled.stdout }}"
   tags:
     - nginx_install
     - check_boot_status
@@ -202,8 +202,8 @@
 
 # Print a debug message after enabling the NGINX service.
 - name: Debug message after enabling NGINX
-  ansible.builtin.debug:
-    msg: "NGINX has been enabled to start at boot."
+  # ansible.builtin.debug:
+    # msg: "NGINX has been enabled to start at boot."
   when:
     - is_enabled.stdout == "disabled"
   tags:
