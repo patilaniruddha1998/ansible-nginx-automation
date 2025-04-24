@@ -12,7 +12,7 @@
     msg: "Stop NGINX: {{ stop_nginx }}"
   tags:
     - stop_nginx
-    - nginx_install
+    - nginx_plus_install
 
 # Handler to start and enable the NGINX service.
 # This is triggered after the upgrade or configuration changes are validated.
@@ -27,4 +27,4 @@
     msg: "Start NGINX service: {{ start_nginx_service }}"
   tags:
     - start_nginx
-    - nginx_install
+    - nginx_plus_install

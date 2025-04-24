@@ -9,7 +9,7 @@
   debug:
     msg: "Create upgrade directory: {{ create_upgrade_dir }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - setup
 
 # Change the working directory to the NGINX upgrade directory to perform subsequent operations.
@@ -22,7 +22,7 @@
   debug:
     msg: "Change directory: {{ chdir_result }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - setup
 
 # Download the NGINX upgrade package (zip file) from the Artifactory repository.
@@ -39,7 +39,7 @@
 #   debug:
 #     msg: "Download package: {{ download_package }}"
 #   tags:
-#     - nginx_install
+#     - nginx_plus_install
 #     - download
 
 # Ensure the directory for extracting the NGINX upgrade package exists.
@@ -53,7 +53,7 @@
   debug:
     msg: "Create extract directory: {{ create_extract_dir }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - setup
 
 # Extract the downloaded NGINX upgrade package into the specified directory.
@@ -68,7 +68,7 @@
   debug:
     msg: "Extract package: {{ unarchive_package }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - extract
 
 # Install the new NGINX packages using the `yum localinstall` command.
@@ -84,7 +84,7 @@
   debug:
     msg: "Install new packages: {{ yum_localinstall_output }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - install
 
 # Retrieve the version and release information of the base NGINX Plus package.
@@ -99,7 +99,7 @@
   debug:
     msg: "Base NGINX Plus version info: {{ base_nginx_version_info }}"  # Print the retrieved version information for debugging
   tags:
-    - nginx_install
+    - nginx_plus_install
     - install
   
 # Dynamically create the list of expected NGINX Plus RPMs based on the installed base version.
@@ -114,7 +114,7 @@
   debug:
     msg: "Dynamically expected NGINX Plus RPMs: {{ nginx_expected_rpms_dynamic }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - install
 
 # Verify that the dynamically generated list of expected NGINX Plus RPM packages is installed.
@@ -129,7 +129,7 @@
   debug:
     msg: "Installed NGINX Plus RPM packages (Dynamic): {{ installed_nginx_rpms_dynamic.stdout_lines }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - install
 
 # Check if all expected NGINX Plus modules are installed.
@@ -142,7 +142,7 @@
   debug:
     msg: "All modules installed: {{ all_modules_installed }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - install
 
 # Validate the NGINX configuration to ensure it is correct after the upgrade.
@@ -157,7 +157,7 @@
   notify:
     - Start-Nginx # Notify the handler to start NGINX if the configuration is valid.
   tags:
-    - nginx_install
+    - nginx_plus_install
     - validate
 
 # Retrieve and print the installed NGINX version for verification.
@@ -171,7 +171,7 @@
   debug:
     msg: "NGINX version is {{ nginx_version_output.stderr }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - version
 
 # Confirm if NGINX is enabled to start at boot.
@@ -184,7 +184,7 @@
   debug:
     msg: "NGINX boot status: {{ is_enabled.stdout }}"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - check_boot_status
 
 # Enable the NGINX service if it is disabled.
@@ -197,7 +197,7 @@
   changed_when: enable_result.rc == 0
   comment: "Enables the NGINX service to start at boot if it was disabled."
   tags:
-    - nginx_install
+    - nginx_plus_install
     - enable_service
 
 # Print a debug message after enabling the NGINX service.
@@ -207,5 +207,5 @@
   when:
     - is_enabled.stdout == "disabled"
   tags:
-    - nginx_install
+    - nginx_plus_install
     - enable_service
