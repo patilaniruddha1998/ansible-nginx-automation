@@ -1,0 +1,8 @@
+---
+- name: Upgrade NGINX on target host(s)
+  hosts: nginx
+  become: true
+  vars_files:
+     - ../inventories/development/group_vars/nginx.yml
+  roles:
+    - nginx_upgrade
