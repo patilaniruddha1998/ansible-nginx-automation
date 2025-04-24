@@ -1,0 +1,24 @@
+# Parent group for all web servers
+[web-servers:children]
+internet-servers
+intranet-servers
+ampfiles-servers
+
+# Group for internet-facing Thanos servers
+[internet-servers]
+thanos_prod_internet_1 ansible_host=10.22.66.207 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 1
+thanos_prod_internet_2 ansible_host=10.22.81.201 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 2
+thanos_prod_internet_3 ansible_host=10.22.82.100 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 3
+thanos_prod_internet_4 ansible_host=10.22.65.200 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 4
+
+# Group for intranet-facing Thanos servers
+[intranet-servers]
+thanos_prod_intranet_1 ansible_host=10.22.230.185 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 1
+thanos_prod_intranet_2 ansible_host=10.22.226.54 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 2
+thanos_prod_intranet_3 ansible_host=10.22.228.87 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 3
+thanos_prod_intranet_4 ansible_host=10.22.224.200 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 4
+
+# Group for Ampfiles intranet servers
+[ampfiles-servers]
+ampfiles_prod_intranet_1 ansible_host=10.22.132.102 ansible_port=12323 ansible_user=ansibleuser # Ampfiles Intranet Server 1
+ampfiles_prod_intranet_2 ansible_host=10.22.128.189 ansible_port=12323 ansible_user=ansibleuser # Ampfiles Intranet Server 2

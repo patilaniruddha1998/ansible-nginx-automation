@@ -1,0 +1,19 @@
+# Parent group for all web servers
+[web-servers:children]
+internet-servers
+intranet-servers
+ampfiles-servers
+
+# Group for internet-facing Thanos servers
+[internet-servers]
+thanos_uat_internet_1 ansible_host=10.20.22.30 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 1
+thanos_uat_internet_2 ansible_host=10.20.22.12 ansible_port=12323 ansible_user=ansibleuser # Thanos Internet Server 2
+
+# Group for intranet-facing Thanos servers
+[intranet-servers]
+thanos_uat_intranet_1 ansible_host=10.20.166.28 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 1
+thanos_uat_intranet_2 ansible_host=10.20.166.60 ansible_port=12323 ansible_user=ansibleuser # Thanos Intranet Server 2
+
+# Group for Ampfiles intranet servers
+[ampfiles-servers]
+ampfiles_uat_intranet ansible_host=10.20.166.23 ansible_port=12323 ansible_user=ansibleuser # Ampfiles Intranet Server

@@ -1,0 +1,30 @@
+---
+# Handler to stop the NGINX service.
+# This is typically triggered before upgrading or modifying the NGINX configuration.
+- name: Stop NGINX Service
+  ansible.builtin.systemd:
+    name: "{{ nginx_service_name }}"
+    state: stopped
+  ignore_errors: true # Ignore errors in case the service is already stopped or not running.
+  comment: "Stops the old NGINX service."
+  register: stop_nginx
+  debug:
+    msg: "Stop NGINX: {{ stop_nginx }}"
+  tags:
+    - stop_nginx
+    - nginx_upgrade
+
+# Handler to start and enable the NGINX service.
+# This is triggered after the upgrade or configuration changes are validated.
+- name: Start NGINX Service
+  ansible.builtin.systemd:
+    name: "{{ nginx_service_name }}"
+    state: started
+    enabled: yes # Ensures the service is enabled to start at boot.
+  comment: "Starts and enables the new NGINX service."
+  register: start_nginx_service
+  debug:
+    msg: "Start NGINX service: {{ start_nginx_service }}"
+  tags:
+    - start_nginx
+    - nginx_upgrade

@@ -5,5 +5,4 @@
   vars_files:
      - ../inventories/development/group_vars/nginx.yml
   roles:
-    - nginx_upgrade
-    - nginx_plus_upgrade
+    - nginx_install

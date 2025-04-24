@@ -1,0 +1,153 @@
+# Ensure the NGINX upgrade directory exists. This directory will be used to store upgrade-related files.
+- name: Ensure NGINX upgrade directory exists
+  ansible.builtin.file:
+    path: "{{ nginx_upgrade_dir }}"
+    state: directory
+    mode: '0755'
+  comment: "Creates the NGINX upgrade directory if it doesn't exist."
+  register: create_upgrade_dir
+  debug:
+    msg: "Create upgrade directory: {{ create_upgrade_dir }}"
+  tags:
+    - nginx_upgrade
+    - setup
+
+# Change the working directory to the NGINX upgrade directory to perform subsequent operations.
+- name: Change to NGINX upgrade directory
+  ansible.builtin.command:
+    chdir: "{{ nginx_upgrade_dir }}"
+    cmd: pwd # Optional: Verify current directory
+  register: chdir_result
+  comment: "Changes the working directory to the NGINX upgrade directory."
+  debug:
+    msg: "Change directory: {{ chdir_result }}"
+  tags:
+    - nginx_upgrade
+    - setup
+
+# Download the NGINX upgrade package (zip file) from the Artifactory repository.
+- name: Download NGINX package from Artifactory
+  ansible.builtin.get_url:
+    url: "{{ artifactory_url }}"
+    dest: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"
+    validate_certs: no
+    url_username: "{{ artifactory_username }}"
+    url_password: "{{ artifactory_password }}"
+    mode: '0644'
+  comment: "Downloads the NGINX zip file from Artifactory."
+  register: download_package
+  debug:
+    msg: "Download package: {{ download_package }}"
+  tags:
+    - nginx_upgrade
+    - download
+
+# Ensure the directory for extracting the NGINX upgrade package exists.
+- name: Ensure extraction directory exists
+  ansible.builtin.file:
+    path: "{{ nginx_extracted_dir }}"
+    state: directory
+    mode: '0755'
+  comment: "Ensures the extraction directory for NGINX exists."
+  register: create_extract_dir
+  debug:
+    msg: "Create extract directory: {{ create_extract_dir }}"
+  tags:
+    - nginx_upgrade
+    - setup
+
+# Extract the downloaded NGINX upgrade package into the specified directory.
+- name: Extract NGINX package
+  ansible.builtin.unarchive:
+    src: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"
+    dest: "{{ nginx_extracted_dir }}"
+    remote_src: yes
+    creates: "{{ nginx_extracted_dir }}/# A file expected after extraction"
+  comment: "Extracts the downloaded NGINX zip file."
+  register: unarchive_package
+  debug:
+    msg: "Extract package: {{ unarchive_package }}"
+  tags:
+    - nginx_upgrade
+    - extract
+
+# Install the new NGINX packages using the `yum localinstall` command.
+- name: Install new NGINX packages
+  ansible.builtin.command:
+    cmd: "yum localinstall -y {{ nginx_rpm_glob }}"
+    chdir: "{{ nginx_extracted_dir }}"
+  become: true
+  when: (nginx_rpm_glob | glob | length > 0)
+  register: yum_localinstall_output
+  failed_when: yum_localinstall_output.rc != 0
+  comment: "Installs the new NGINX packages using yum localinstall."
+  debug:
+    msg: "Install new packages: {{ yum_localinstall_output }}"
+  tags:
+    - nginx_upgrade
+    - install
+
+# Validate the NGINX configuration to ensure it is correct after the upgrade.
+- name: Validate NGINX configuration
+  ansible.builtin.command:
+    cmd: "nginx -t"
+  register: nginx_config_test
+  failed_when: nginx_config_test.rc != 0
+  comment: "Validates the NGINX configuration."
+  debug:
+    msg: "Validate config: {{ nginx_config_test }}"
+  notify:
+    - Start-Nginx # Notify the handler to start NGINX if the configuration is valid.
+  tags:
+    - nginx_upgrade
+    - validate
+
+# Retrieve and print the installed NGINX version for verification.
+- name: Retrieve NGINX version
+  ansible.builtin.command:
+    cmd: "nginx -v"
+  register: nginx_version_output
+  changed_when: false
+  failed_when: nginx_version_output.rc != 0
+  comment: "Retrieves the installed NGINX version."
+  debug:
+    msg: "NGINX version is {{ nginx_version_output.stderr }}"
+  tags:
+    - nginx_upgrade
+    - version
+
+# Confirm if NGINX is enabled to start at boot.
+- name: Check if NGINX is enabled to start at boot
+  ansible.builtin.command:
+    cmd: "systemctl is-enabled {{ nginx_service_name }}"
+  register: is_enabled
+  changed_when: false
+  comment: "Checks if the NGINX service is enabled to start at boot."
+  debug:
+    msg: "NGINX boot status: {{ is_enabled.stdout }}"
+  tags:
+    - nginx_upgrade
+    - check_boot_status
+
+# Enable the NGINX service if it is disabled.
+- name: Enable NGINX service if disabled
+  ansible.builtin.command:
+    cmd: "systemctl enable {{ nginx_service_name }}"
+  when:
+    - is_enabled.stdout == "disabled"
+  register: enable_result
+  changed_when: enable_result.rc == 0
+  comment: "Enables the NGINX service to start at boot if it was disabled."
+  tags:
+    - nginx_upgrade
+    - enable_service
+
+# Print a debug message after enabling the NGINX service.
+- name: Debug message after enabling NGINX
+  ansible.builtin.debug:
+    msg: "NGINX has been enabled to start at boot."
+  when:
+    - is_enabled.stdout == "disabled"
+  tags:
+    - nginx_upgrade
+    - enable_service

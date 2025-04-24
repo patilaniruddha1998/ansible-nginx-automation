@@ -1,0 +1,7 @@
+nginx_plus_base_package: "nginx-plus"
+nginx_plus_module_prefix: "nginx-plus-module-"
+nginx_plus_module_names:
+  - "xslt"
+  - "geoip"
+  - "perl"
+  - "image-filter"
