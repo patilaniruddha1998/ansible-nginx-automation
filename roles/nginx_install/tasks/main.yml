@@ -102,7 +102,7 @@
   ansible.builtin.set_fact:
     nginx_expected_rpms_dynamic: "{{ [nginx_plus_base_package + '-' + (base_nginx_version_info.stdout | default('')) + '.x86_64'] +
                                     nginx_plus_module_names | map('regex_replace', '^', nginx_plus_module_prefix) |
-                                    map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default('')) + '.amzn2.ngx.x86_64') | list }}"
+                                    map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default('')) | list }}"
   when: base_nginx_version_info.rc == 0
   tags:
     - nginx_install
@@ -170,8 +170,8 @@
   ansible.builtin.command:
     cmd: "systemctl enable {{ nginx_service_name }}"
   when:
-    - is_enabled.rc == 1  # Only run if the service is disabled
     - all_modules_installed | default(false)  # Only run if all_modules_installed is true
+    - is_enabled.rc == 1  # Only run if the service is disabled
   register: enable_result
   changed_when: enable_result.rc == 0
   tags:
