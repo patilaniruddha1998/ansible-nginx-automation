@@ -103,7 +103,6 @@
     nginx_expected_rpms_dynamic: "{{ [nginx_plus_base_package + '-' + (base_nginx_version_info.stdout | default('')) + '.x86_64'] +
                                     nginx_plus_module_names | map('regex_replace', '^', nginx_plus_module_prefix) |
                                     map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default(''))) | list }}"
-  register: nginx_expected_rpms_dynamic
   when: base_nginx_version_info.rc == 0
   tags:
     - nginx_install
@@ -112,13 +111,17 @@
 # Verify that the dynamically generated list of expected NGINX Plus RPM packages is installed.
 - name: Verify Installed NGINX RPM Packages (Dynamic)
   ansible.builtin.command:
-    cmd: "rpm -qa | grep '^{{ nginx_plus_base_package }}-' | paste -sd'|'"
+    cmd: "rpm -qa | grep '^nginx-'"
   register: installed_nginx_rpms_dynamic
   changed_when: false
   when: nginx_expected_rpms_dynamic is defined
   tags:
     - nginx_install
     - install
+
+- name: Debug - Installed NGINX RPMs
+  debug:
+    var: installed_nginx_rpms_dynamic.stdout_lines
 
 # Check if all expected NGINX Plus modules are installed.
 - name: Check if all expected NGINX Plus modules are installed
