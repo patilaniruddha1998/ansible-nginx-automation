@@ -110,7 +110,7 @@
 
 # Verify that the dynamically generated list of expected NGINX Plus RPM packages is installed.
 - name: Verify Installed NGINX RPM Packages (Dynamic)
-  ansible.builtin.command:
+  ansible.builtin.shell:
     cmd: "rpm -qa | grep '^nginx-'"
   register: installed_nginx_rpms_dynamic
   changed_when: false
@@ -131,6 +131,13 @@
   tags:
     - nginx_install
     - install
+    
+- name: Debug - Difference between expected and installed NGINX RPMs
+  debug:
+    msg: >
+      Difference: {{
+        nginx_expected_rpms_dynamic | difference(installed_nginx_rpms_dynamic.stdout_lines)
+      }}
 
 # Validate the NGINX configuration to ensure it is correct after the upgrade.
 - name: Validate NGINX configuration
