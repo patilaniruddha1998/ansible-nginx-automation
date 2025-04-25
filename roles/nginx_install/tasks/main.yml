@@ -64,7 +64,7 @@
   ansible.builtin.unarchive:
     src: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"
     dest: "{{ nginx_extracted_dir }}"
-    creates: "{{ nginx_extracted_dir }}/" # A file expected after extraction
+    remote_src: yes  # Indicates the file is on the remote machine
   register: unarchive_package
   tags:
     - nginx_install
@@ -73,22 +73,52 @@
 - name: Debug - Extract NGINX package
   debug:
     var: unarchive_package
+- name: Debug variables for extraction
+  debug:
+    msg:
+      - "nginx_upgrade_dir: {{ nginx_upgrade_dir }}"
+      - "nginx_file_name: {{ nginx_file_name }}"
+      - "nginx_extracted_dir: {{ nginx_extracted_dir }}"
 
-# Ensure all RPM files in the extracted directory have executable permissions.
-- name: Set executable permissions for RPM files
+- name: List files in extracted directory
+  ansible.builtin.command:
+    cmd: "ls -l {{ nginx_extracted_dir }}"
+  register: list_files
+  debug:
+    var: list_files.stdout_lines
+
+- name: Set executable permissions for all files in the extracted directory
   ansible.builtin.file:
     path: "{{ item }}"
-    mode: '0755'  # Set read, write, and execute permissions for the owner, and read and execute for others.
+    mode: '0755'
   with_fileglob:
-    - "{{ nginx_extracted_dir }}/*.rpm"  # Match all RPM files in the extracted directory.
+    - "{{ nginx_extracted_dir }}/*"  # Match all files in the extracted directory.
   register: set_permissions
   tags:
     - nginx_install
     - permissions
 
-- name: Debug - Set executable permissions for RPM files
-  debug:
-    var: set_permissions
+# Ensure all RPM files in the extracted directory have executable permissions.
+# - name: Set executable permissions for RPM files
+#   ansible.builtin.file:
+#     path: "{{ item }}"
+#     mode: '0755'  # Set read, write, and execute permissions for the owner, and read and execute for others.
+#   with_fileglob:
+#     - "{{ nginx_extracted_dir }}/*"  # Match all RPM files in the extracted directory.
+#   register: set_permissions
+#   tags:
+#     - nginx_install
+#     - permissions
+
+# - name: Debug - List all files in the extracted directory
+#   debug:
+#     msg: "Processing file: {{ item }}"
+#   with_fileglob:
+#     - "{{ nginx_extracted_dir }}/*"
+
+# - name: Debug - Set executable permissions for RPM files
+#   debug:
+#     var: "Set permissions result: {{ set_permissions }}"
 
 # Install the new NGINX packages using the `yum localinstall` command.
 - name: Install new NGINX packages
