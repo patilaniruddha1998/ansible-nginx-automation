@@ -9,6 +9,10 @@
     - nginx_install
     - setup
 
+- name: Debug - Ensure NGINX upgrade directory exists
+  debug:
+    var: create_upgrade_dir
+
 # Change the working directory to the NGINX upgrade directory to perform subsequent operations.
 - name: Change to NGINX upgrade directory
   ansible.builtin.command:
@@ -19,22 +23,9 @@
     - nginx_install
     - setup
 
-# Download the NGINX upgrade package (zip file) from the Artifactory repository.
-# - name: Download NGINX package from Artifactory
-#   ansible.builtin.get_url:
-#     url: "{{ artifactory_url }}"
-#     dest: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"
-#     validate_certs: no
-#     url_username: "{{ artifactory_username }}"
-#     url_password: "{{ artifactory_password }}"
-#     mode: '0644'
-#   #comment: "Downloads the NGINX zip file from Artifactory."
-#   register: download_package
-#   debug:
-#     msg: "Download package: {{ download_package }}"
-#   tags:
-#     - nginx_install
-#     - download
+- name: Debug - Change to NGINX upgrade directory
+  debug:
+    var: chdir_result
 
 # Ensure the directory for extracting the NGINX upgrade package exists.
 - name: Ensure extraction directory exists
@@ -47,6 +38,10 @@
     - nginx_install
     - setup
 
+- name: Debug - Ensure extraction directory exists
+  debug:
+    var: create_extract_dir
+
 # Extract the downloaded NGINX upgrade package into the specified directory.
 - name: Extract NGINX package
   ansible.builtin.unarchive:
@@ -58,6 +53,10 @@
     - nginx_install
     - extract
 
+- name: Debug - Extract NGINX package
+  debug:
+    var: unarchive_package
+
 - name: Find all files in the extracted directory
   ansible.builtin.find:
     paths: "{{ nginx_extracted_dir }}"
@@ -65,6 +64,10 @@
   register: found_files
   tags:
     - nginx_install
+
+- name: Debug - Find all files in the extracted directory
+  debug:
+    var: found_files
 
 - name: Set executable permissions for all files in the extracted directory
   ansible.builtin.file:
@@ -74,6 +77,11 @@
   tags:
     - nginx_install
     - permissions
+
+- name: Debug - Set executable permissions for all files in the extracted directory
+  debug:
+    msg: "Processed file: {{ item.path }}"
+  loop: "{{ found_files.files }}"
 
 # Install the new NGINX packages using the `yum localinstall` command.
 - name: Install new NGINX packages
@@ -86,6 +94,10 @@
     - nginx_install
     - install
 
+- name: Debug - Install new NGINX packages
+  debug:
+    var: yum_localinstall_output
+
 # Retrieve the version and release information of the base NGINX Plus package.
 - name: Get Base NGINX Plus Package Version
   ansible.builtin.command:
@@ -97,6 +109,10 @@
     - nginx_install
     - install
 
+- name: Debug - Get Base NGINX Plus Package Version
+  debug:
+    var: base_nginx_version_info
+
 # Dynamically create the list of expected NGINX Plus RPMs based on the installed base version.
 - name: Set Expected NGINX Plus RPM List (Dynamic)
   ansible.builtin.set_fact:
@@ -107,6 +123,10 @@
   tags:
     - nginx_install
     - install
+
+- name: Debug - Set Expected NGINX Plus RPM List (Dynamic)
+  debug:
+    var: nginx_expected_rpms_dynamic
 
 # Verify that the dynamically generated list of expected NGINX Plus RPM packages is installed.
 - name: Verify Installed NGINX RPM Packages (Dynamic)
@@ -152,6 +172,10 @@
     - nginx_install
     - validate
 
+- name: Debug - Validate NGINX configuration
+  debug:
+    var: nginx_config_test
+
 # Retrieve and print the installed NGINX version for verification.
 - name: Retrieve NGINX version
   ansible.builtin.command:
@@ -163,6 +187,10 @@
   tags:
     - nginx_install
     - version
+
+- name: Debug - Retrieve NGINX version
+  debug:
+    var: nginx_version_output
 
 # Confirm if NGINX is enabled to start at boot.
 - name: Check if NGINX is enabled to start at boot
@@ -176,6 +204,10 @@
     - nginx_install
     - check_boot_status
 
+- name: Debug - Check if NGINX is enabled to start at boot
+  debug:
+    var: is_enabled
+
 # Enable the NGINX service if it is disabled.
 - name: Enable NGINX service if disabled
   ansible.builtin.command:
@@ -188,3 +220,7 @@
   tags:
     - nginx_install
     - enable_service
+
+- name: Debug - Enable NGINX service if disabled
+  debug:
+    var: enable_result
