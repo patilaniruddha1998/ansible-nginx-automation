@@ -80,19 +80,17 @@
       - "nginx_file_name: {{ nginx_file_name }}"
       - "nginx_extracted_dir: {{ nginx_extracted_dir }}"
 
-- name: List files in extracted directory
-  ansible.builtin.command:
-    cmd: "ls -l {{ nginx_extracted_dir }}"
-  register: list_files
-
+- name: Find all files in the extracted directory
+  ansible.builtin.find:
+    paths: "{{ nginx_extracted_dir }}"
+    file_type: file
+  register: found_files
 
 - name: Set executable permissions for all files in the extracted directory
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     mode: '0755'
-  with_fileglob:
-    - "{{ nginx_extracted_dir }}/*"  # Match all files in the extracted directory.
-  register: set_permissions
+  loop: "{{ found_files.files }}"
   tags:
     - nginx_install
     - permissions
