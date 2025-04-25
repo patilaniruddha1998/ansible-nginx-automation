@@ -4,3 +4,4 @@ nginx_module_names:
   - "xslt"
   - "perl"
   - "image-filter"
+nginx_priority_package: "{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64"
