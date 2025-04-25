@@ -27,6 +27,24 @@
   debug:
     var: chdir_result
 
+# Download the NGINX upgrade package (zip file) from the Artifactory repository.
+# This step fetches the required package for the upgrade process.
+- name: Download NGINX package from Artifactory
+  ansible.builtin.get_url:
+    url: "{{ artifactory_url }}"  # URL of the package in Artifactory
+    dest: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"  # Destination path for the downloaded file
+    validate_certs: no  # Disable certificate validation for Artifactory
+    url_username: "{{ artifactory_username }}"  # Artifactory username
+    url_password: "{{ artifactory_password }}"  # Artifactory password
+    mode: '0644'  # Set appropriate permissions for the downloaded file
+  comment: "Downloads the NGINX zip file from Artifactory."
+  register: download_package
+  debug:
+    msg: "Download package: {{ download_package }}"
+  tags:
+    - nginx_upgrade
+    - download
+
 # Ensure the directory for extracting the NGINX upgrade package exists.
 - name: Ensure extraction directory exists
   ansible.builtin.file:
