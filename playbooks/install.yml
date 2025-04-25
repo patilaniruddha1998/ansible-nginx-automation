@@ -1,6 +1,6 @@
 ---
 - name: Upgrade NGINX on target host(s)
-  hosts: nginx
+  hosts: "{{ host }}"
   become: true
   vars_files:
      - ../inventories/development/group_vars/nginx.yml

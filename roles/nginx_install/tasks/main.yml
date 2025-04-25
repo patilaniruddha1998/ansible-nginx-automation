@@ -1,16 +1,17 @@
-# #Ensure the NGINX upgrade directory exists. This directory will be used to store upgrade-related files.
+# Ensure the NGINX upgrade directory exists. This directory will be used to store upgrade-related files.
 - name: Ensure NGINX upgrade directory exists
   ansible.builtin.file:
     path: "{{ nginx_upgrade_dir }}"
     state: directory
     mode: '0755'
-  #comment: "Creates the NGINX upgrade directory if it doesn't exist."
   register: create_upgrade_dir
-  # debug:
-    # msg: "Create upgrade directory: {{ create_upgrade_dir }}"
   tags:
     - nginx_install
     - setup
+
+- name: Debug - Ensure NGINX upgrade directory exists
+  debug:
+    var: create_upgrade_dir
 
 # Change the working directory to the NGINX upgrade directory to perform subsequent operations.
 - name: Change to NGINX upgrade directory
@@ -18,12 +19,13 @@
     chdir: "{{ nginx_upgrade_dir }}"
     cmd: pwd # Optional: Verify current directory
   register: chdir_result
-  #comment: "Changes the working directory to the NGINX upgrade directory."
-  # debug:
-    # msg: "Change directory: {{ chdir_result }}"
   tags:
     - nginx_install
     - setup
+
+- name: Debug - Change to NGINX upgrade directory
+  debug:
+    var: chdir_result
 
 # Download the NGINX upgrade package (zip file) from the Artifactory repository.
 # - name: Download NGINX package from Artifactory
@@ -48,102 +50,120 @@
     path: "{{ nginx_extracted_dir }}"
     state: directory
     mode: '0755'
-  #comment: "Ensures the extraction directory for NGINX exists."
   register: create_extract_dir
-  # debug:
-    # msg: "Create extract directory: {{ create_extract_dir }}"
   tags:
     - nginx_install
     - setup
+
+- name: Debug - Ensure extraction directory exists
+  debug:
+    var: create_extract_dir
 
 # Extract the downloaded NGINX upgrade package into the specified directory.
 - name: Extract NGINX package
   ansible.builtin.unarchive:
     src: "{{ nginx_upgrade_dir }}/{{ nginx_file_name }}.zip"
     dest: "{{ nginx_extracted_dir }}"
-    remote_src: yes
-    creates: "{{ nginx_extracted_dir }}/# A file expected after extraction"
-  #comment: "Extracts the downloaded NGINX zip file."
+    creates: "{{ nginx_extracted_dir }}/" # A file expected after extraction
   register: unarchive_package
-  # debug:
-    # msg: "Extract package: {{ unarchive_package }}"
   tags:
     - nginx_install
     - extract
 
+- name: Debug - Extract NGINX package
+  debug:
+    var: unarchive_package
+
+# Ensure all RPM files in the extracted directory have executable permissions.
+- name: Set executable permissions for RPM files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: '0755'  # Set read, write, and execute permissions for the owner, and read and execute for others.
+  with_fileglob:
+    - "{{ nginx_extracted_dir }}/*.rpm"  # Match all RPM files in the extracted directory.
+  register: set_permissions
+  tags:
+    - nginx_install
+    - permissions
+
+- name: Debug - Set executable permissions for RPM files
+  debug:
+    var: set_permissions
+
 # Install the new NGINX packages using the `yum localinstall` command.
 - name: Install new NGINX packages
   ansible.builtin.command:
-    cmd: "yum localinstall -y {{ nginx_rpm_glob }}"
-    chdir: "{{ nginx_extracted_dir }}"
+    cmd: "yum localinstall -y {{ item }}"
+  with_fileglob:
+    - "{{ nginx_extracted_dir }}/*.rpm"
   become: true
-  when: (nginx_rpm_glob | glob | length > 0)
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
-  #comment: "Installs the new NGINX packages using yum localinstall."
-  # debug:
-    # msg: "Install new packages: {{ yum_localinstall_output }}"
   tags:
     - nginx_install
     - install
 
+- name: Debug - Install new NGINX packages
+  debug:
+    var: yum_localinstall_output
+
 # Retrieve the version and release information of the base NGINX Plus package.
-# This step is useful for dynamically determining the expected RPMs for the upgrade process.
 - name: Get Base NGINX Plus Package Version
   ansible.builtin.command:
-    cmd: "rpm -q --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' {{ nginx_plus_base_package }}"  # Query the version, release, and architecture of the package
-  register: base_nginx_version_info  # Store the output of the command in a variable
-  changed_when: false  # Mark the task as not changing the system, as it only retrieves information
-  ignore_errors: true  # Ignore errors if the package is not installed
-  #comment: "Gets the version and release of the base NGINX Plus package for dynamic RPM verification."
-  # debug:
-    # msg: "Base NGINX Plus version info: {{ base_nginx_version_info }}"  # Print the retrieved version information for debugging
+    cmd: "rpm -q --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' {{ nginx_plus_base_package }}"
+  register: base_nginx_version_info
+  changed_when: false
+  ignore_errors: true
   tags:
     - nginx_install
     - install
-  
+
+- name: Debug - Get Base NGINX Plus Package Version
+  debug:
+    var: base_nginx_version_info
+
 # Dynamically create the list of expected NGINX Plus RPMs based on the installed base version.
-# This ensures that the correct RPMs are verified during the upgrade process.
 - name: Set Expected NGINX Plus RPM List (Dynamic)
   ansible.builtin.set_fact:
     nginx_expected_rpms_dynamic: "{{ [nginx_plus_base_package + '-' + (base_nginx_version_info.stdout | default('')) + '.x86_64'] +
                                     nginx_plus_module_names | map('regex_replace', '^', nginx_plus_module_prefix) |
                                     map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default('')) + '.amzn2.ngx.x86_64') | list }}"
-  when: base_nginx_version_info.rc == 0  # Only proceed if the base version information was successfully retrieved
-  #comment: "Dynamically creates the list of expected NGINX Plus RPMs based on the installed base version."
-  # debug:
-    # msg: "Dynamically expected NGINX Plus RPMs: {{ nginx_expected_rpms_dynamic }}"
+  when: base_nginx_version_info.rc == 0
   tags:
     - nginx_install
     - install
 
+- name: Debug - Set Expected NGINX Plus RPM List (Dynamic)
+  debug:
+    var: nginx_expected_rpms_dynamic
+
 # Verify that the dynamically generated list of expected NGINX Plus RPM packages is installed.
-# This ensures that all required RPMs are present after the upgrade.
 - name: Verify Installed NGINX RPM Packages (Dynamic)
   ansible.builtin.command:
     cmd: "rpm -qa | grep '^nginx-plus-' | grep -E '{{ nginx_expected_rpms_dynamic | join('|') }}'"
   register: installed_nginx_rpms_dynamic
-  changed_when: false  # This task does not modify the system
-  when: nginx_expected_rpms_dynamic is defined  # Only run if the expected RPM list is defined
-  #comment: "Verifies that the dynamically generated list of expected NGINX Plus RPM packages are installed."
-  # debug:
-    # msg: "Installed NGINX Plus RPM packages (Dynamic): {{ installed_nginx_rpms_dynamic.stdout_lines }}"
+  changed_when: false
+  when: nginx_expected_rpms_dynamic is defined
   tags:
     - nginx_install
     - install
 
+- name: Debug - Verify Installed NGINX RPM Packages (Dynamic)
+  debug:
+    var: installed_nginx_rpms_dynamic
+
 # Check if all expected NGINX Plus modules are installed.
-# This ensures that no required modules are missing after the upgrade.
 - name: Check if all expected NGINX Plus modules are installed
   ansible.builtin.set_fact:
     all_modules_installed: "{{ nginx_expected_rpms_dynamic | difference(installed_nginx_rpms_dynamic.stdout_lines) | length == 0 }}"
-  when: installed_nginx_rpms_dynamic is defined  # Only run if the installed RPM list is defined
-  #comment: "Checks if all expected NGINX Plus modules are installed."
-  # debug:
-    # msg: "All modules installed: {{ all_modules_installed }}"
+  when: installed_nginx_rpms_dynamic is defined
   tags:
     - nginx_install
     - install
+
+- name: Debug - Check if all expected NGINX Plus modules are installed
+  debug:
+    var: all_modules_installed
 
 # Validate the NGINX configuration to ensure it is correct after the upgrade.
 - name: Validate NGINX configuration
@@ -151,14 +171,15 @@
     cmd: "nginx -t"
   register: nginx_config_test
   failed_when: nginx_config_test.rc != 0
-  #comment: "Validates the NGINX configuration."
-  # debug:
-    # msg: "Validate config: {{ nginx_config_test }}"
   notify:
-    - Start-Nginx # Notify the handler to start NGINX if the configuration is valid.
+    - Start-Nginx
   tags:
     - nginx_install
     - validate
+
+- name: Debug - Validate NGINX configuration
+  debug:
+    var: nginx_config_test
 
 # Retrieve and print the installed NGINX version for verification.
 - name: Retrieve NGINX version
@@ -167,12 +188,13 @@
   register: nginx_version_output
   changed_when: false
   failed_when: nginx_version_output.rc != 0
-  #comment: "Retrieves the installed NGINX version."
-  # debug:
-    # msg: "NGINX version is {{ nginx_version_output.stderr }}"
   tags:
     - nginx_install
     - version
+
+- name: Debug - Retrieve NGINX version
+  debug:
+    var: nginx_version_output
 
 # Confirm if NGINX is enabled to start at boot.
 - name: Check if NGINX is enabled to start at boot
@@ -180,12 +202,13 @@
     cmd: "systemctl is-enabled {{ nginx_service_name }}"
   register: is_enabled
   changed_when: false
-  #comment: "Checks if the NGINX service is enabled to start at boot."
-  # debug:
-    # msg: "NGINX boot status: {{ is_enabled.stdout }}"
   tags:
     - nginx_install
     - check_boot_status
+
+- name: Debug - Check if NGINX is enabled to start at boot
+  debug:
+    var: is_enabled
 
 # Enable the NGINX service if it is disabled.
 - name: Enable NGINX service if disabled
@@ -195,17 +218,10 @@
     - is_enabled.stdout == "disabled"
   register: enable_result
   changed_when: enable_result.rc == 0
-  #comment: "Enables the NGINX service to start at boot if it was disabled."
   tags:
     - nginx_install
     - enable_service
 
-# Print a debug message after enabling the NGINX service.
-- name: Debug message after enabling NGINX
-  # ansible.builtin.debug:
-    # msg: "NGINX has been enabled to start at boot."
-  when:
-    - is_enabled.stdout == "disabled"
-  tags:
-    - nginx_install
-    - enable_service
+- name: Debug - Enable NGINX service if disabled
+  debug:
+    var: enable_result
