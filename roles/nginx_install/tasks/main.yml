@@ -120,12 +120,14 @@
     cmd: "yum localinstall -y {{ item.path }}"
   loop: >
     {{
-      found_files.files | selectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64') |
+      found_files.files | selectattr('path', 'search', nginx_priority_package) |
       list +
-      (found_files.files | rejectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64') | list)
+      (found_files.files | rejectattr('path', 'search', nginx_priority_package) | list)
     }}
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
+  vars:
+    nginx_priority_package: "{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64"  # Define the prioritized package path
   tags:
     - nginx_install
     - install
@@ -134,8 +136,8 @@
   debug:
     msg: >
       Installation order: {{
-        found_files.files | selectattr('path', 'search', '{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64') | list +
-        (found_files.files | rejectattr('path', 'search', '{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64') | list)
+        found_files.files | selectattr('path', 'search', nginx_priority_package) | list +
+        (found_files.files | rejectattr('path', 'search', nginx_priority_package) | list)
       }}
 
 # # Install the new NGINX packages using the `yum localinstall` command.
