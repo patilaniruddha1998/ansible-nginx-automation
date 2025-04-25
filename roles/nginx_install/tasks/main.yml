@@ -101,20 +101,40 @@
     msg: "Processed file: {{ item.path }}"
   loop: "{{ found_files.files }}"
 
-# Install the new NGINX packages using the `yum localinstall` command.
+# # Install the new NGINX packages using the `yum localinstall` command.
+# - name: Install new NGINX packages
+#   ansible.builtin.command:
+#     cmd: "yum localinstall -y {{ item.path }}"
+#   loop: "{{ found_files.files }}"
+#   register: yum_localinstall_output
+#   failed_when: yum_localinstall_output.rc != 0
+#   tags:
+#     - nginx_install
+#     - install
+
 - name: Install new NGINX packages
   ansible.builtin.command:
     cmd: "yum localinstall -y {{ item.path }}"
-  loop: "{{ found_files.files }}"
+  loop: >
+    {{
+      found_files.files | selectattr('path', 'search', '{{ nginx_file_name }}.amzn2023.ngx.x86_64') |
+      list +
+      (found_files.files | rejectattr('path', 'search', '{{ nginx_file_name }}.amzn2023.ngx.x86_64') | list)
+    }}
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
   tags:
     - nginx_install
     - install
 
-- name: Debug - Install new NGINX packages
+- name: Debug - Order of files for installation
   debug:
-    var: yum_localinstall_output
+    msg: "{{ found_files.files | selectattr('path', 'search', 'nginx-1.26.0-1.amzn2023.ngx.x86_64') | list +
+            (found_files.files | rejectattr('path', 'search', 'nginx-1.26.0-1.amzn2023.ngx.x86_64') | list) }}"
+
+# - name: Debug - Install new NGINX packages
+#   debug:
+#     var: yum_localinstall_output
 
 # Retrieve the version and release information of the base NGINX package.
 - name: Get Base NGINX Package Version
