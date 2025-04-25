@@ -121,9 +121,7 @@
 - name: Install new NGINX packages
   ansible.builtin.command:
     cmd: "yum localinstall -y {{ item }}"
-  with_fileglob:
-    - "{{ nginx_extracted_dir }}/*.rpm"
-  become: true
+  loop: "{{ found_files.files }}"
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
   tags:
