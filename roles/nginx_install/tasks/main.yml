@@ -100,7 +100,7 @@
 # Dynamically create the list of expected NGINX Plus RPMs based on the installed base version.
 - name: Set Expected NGINX Plus RPM List (Dynamic)
   ansible.builtin.set_fact:
-    nginx_expected_rpms_dynamic: "{{ [nginx_plus_base_package + '-' + (base_nginx_version_info.stdout | default('')) + '.x86_64'] +
+    nginx_expected_rpms_dynamic: "{{ [nginx_plus_base_package + '-' + (base_nginx_version_info.stdout | default(''))] +
                                     nginx_plus_module_names | map('regex_replace', '^', nginx_plus_module_prefix) |
                                     map('regex_replace', '$', '-' + (base_nginx_version_info.stdout | default(''))) | list }}"
   when: base_nginx_version_info.rc == 0
@@ -131,7 +131,7 @@
   tags:
     - nginx_install
     - install
-    
+
 - name: Debug - Difference between expected and installed NGINX RPMs
   debug:
     msg: >
