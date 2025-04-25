@@ -37,10 +37,7 @@
     url_username: "{{ artifactory_username }}"  # Artifactory username
     url_password: "{{ artifactory_password }}"  # Artifactory password
     mode: '0644'  # Set appropriate permissions for the downloaded file
-  comment: "Downloads the NGINX zip file from Artifactory."
   register: download_package
-  debug:
-    msg: "Download package: {{ download_package }}"
   tags:
     - nginx_plus_upgrade
     - download
