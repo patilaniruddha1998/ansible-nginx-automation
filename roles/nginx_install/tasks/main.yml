@@ -101,7 +101,19 @@
     msg: "Processed file: {{ item.path }}"
   loop: "{{ found_files.files }}"
 
+- name: Debug - List all found files
+  debug:
+    var: found_files.files
 
+- name: Debug - Filtered files for installation
+  debug:
+    msg: >
+      Selected files (priority): {{
+        found_files.files | selectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1.amzn2023.ngx.x86_64') | list
+      }}
+      Remaining files: {{
+        found_files.files | rejectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1.amzn2023.ngx.x86_64') | list
+      }}
 
 # # Install the new NGINX packages using the `yum localinstall` command.
 # - name: Install new NGINX packages
@@ -121,7 +133,7 @@
 - name: Install NGINX packages with the specific RPM prioritized
   ansible.builtin.command:
     cmd: "yum localinstall -y {{ item }}"
-  loop: "{{ [found_files.files | selectattr('path', 'equalto', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64.rpm') | first | default({}) | get('path')] | compact + (found_files.files | rejectattr('path', 'notequalto', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64.rpm') | map(attribute='path') | list) | unique }}"
+  loop: "{{ [found_files.files | selectattr('path', 'equalto', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64.rpm') | first | default({}) | get('path')] | compact + (found_files.files | rejectattr('path', 'equalto', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64.rpm') | map(attribute='path') | list) | unique }}"
   register: yum_localinstall_output
   failed_when: yum_localinstall_output.rc != 0
   tags:
