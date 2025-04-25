@@ -6,4 +6,4 @@
      - ../inventories/development/group_vars/nginx.yml
   roles:
     - nginx_install
-    - nginx_plus_install
+   # - nginx_plus_install
