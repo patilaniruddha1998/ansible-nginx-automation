@@ -85,11 +85,7 @@
     cmd: "ls -l {{ nginx_extracted_dir }}"
   register: list_files
 
-- name: debug
-  debug:
-    var: list_files.stdout_lines
-    msg: list_files.stdout_lines
-    
+
 - name: Set executable permissions for all files in the extracted directory
   ansible.builtin.file:
     path: "{{ item }}"
