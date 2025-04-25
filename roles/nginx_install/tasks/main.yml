@@ -109,10 +109,10 @@
   debug:
     msg: >
       Selected files (priority): {{
-        found_files.files | selectattr('path', 'search', '{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64') | list
+        found_files.files | selectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64') | list
       }}
       Remaining files: {{
-        found_files.files | rejectattr('path', 'search', '{{ nginx_extracted_dir }}/{{ nginx_file_name }}.amzn2023.ngx.x86_64') | list
+        found_files.files | rejectattr('path', 'search', '/root/nginx-upgrade/nginx-1.26.0-1/nginx-1.26.0-1.amzn2023.ngx.x86_64') | list
       }}
 
 - name: Install new NGINX packages
